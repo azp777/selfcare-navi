@@ -1205,6 +1205,17 @@ function delCurrent(id){
 load();loadLog();
 function startTab(){
   var VALID=["home","shinryo","otc","touyou","kiroku"];
+  // URLハッシュがあれば共有リンクとして最優先(#touyou でタブ、#touyou/kampo でサブタブまで指定可)
+  var h=(location.hash||"").replace("#","");
+  if(h){
+    var parts=h.split("/");
+    if(parts[0]==="yojo")parts[0]="touyou";
+    if(VALID.indexOf(parts[0])>=0){
+      var SUBS=["kampo","shoyaku","shokuyo","kou","aroma","sekki"];
+      if(parts[0]==="touyou"&&SUBS.indexOf(parts[1])>=0)touyouSub=parts[1];
+      go(parts[0]);return;
+    }
+  }
   var s=state.lastTab||"home";
   if(VALID.indexOf(s)<0){
     if(s==="kampo"){touyouSub="kampo";s="touyou";}
