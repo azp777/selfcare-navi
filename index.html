@@ -407,8 +407,22 @@ OTC.push(
 );
 /* ===== 市販薬ガイド 描画 ===== */
 var OTC_FIX="購入時は薬剤師・登録販売者に相談を。3〜5日使って改善しない・悪化する時は受診してください。持病・服薬中・妊娠授乳中・小児は必ず専門家に相談。";
+var otcSub="otc";
 function renderOtc(){
   var v=document.getElementById("view-otc");
+  v.innerHTML='<div class="subnav" id="otcNav">'
+   +'<button onclick="goOtc(\'otc\')">💊 市販薬の成分</button>'
+   +'<button onclick="goOtc(\'rx\')">📋 処方薬ガイド</button></div>'
+   +'<div id="otcBody"></div>';
+  renderOtcBody();
+}
+function goOtc(s){otcSub=s;renderOtcBody();window.scrollTo(0,0);}
+function renderOtcBody(){
+  document.querySelectorAll("#otcNav button").forEach(function(b,i){b.classList.toggle("on",(i===0?"otc":"rx")===otcSub);});
+  if(otcSub==="otc")renderOtcMain();else renderRx();
+}
+function renderOtcMain(){
+  var v=document.getElementById("otcBody");
   v.innerHTML='<div class="card"><h2>💊 市販薬ガイド</h2>'
    +'<p class="lead">症状カテゴリごとに、代表的な<b>成分（有効成分）</b>と選び方の目安を整理しています。用量は書きません。必ず添付文書の用法・用量に従ってください。</p>'
    +'<input class="search" id="otcQ" placeholder="症状・成分で検索（例: せき / いぶ / べんぴ）" oninput="renderOtcList()">'
@@ -430,6 +444,91 @@ function renderOtcList(){
     return '<div class="card"><h3>'+x.icon+' '+esc(x.cat)+'</h3>'+ings
      +'<div class="fixnote">💡 選び方：'+esc(x.point)+'</div>'
      +'<div class="caution">🛑 '+OTC_FIX+'</div></div>';
+  }).join("");
+}
+/* ===== 処方薬ガイド（データは自前で持たず、公式DBへ誘導） =====
+ 分類の「何のための薬か」の平易な説明。個別製品名・用量は書かない。 */
+var RX_CLASS=[
+{n:"カルシウム拮抗薬（Ca拮抗薬）",g:"血圧・心臓",what:"血管をゆるめて広げ、血圧を下げます。狭心症にも使われます。",cau:"⚠️ グレープフルーツ（ジュース）で作用が強まることがあり、一部は相性に注意。"},
+{n:"ARB（〜サルタン）",g:"血圧・心臓",what:"血管を収縮させる物質の働きをおさえ、血圧を下げます。心臓・腎臓の保護目的でも使われます。",cau:""},
+{n:"ACE阻害薬（〜プリル）",g:"血圧・心臓",what:"血圧を下げ、心臓・腎臓を守る目的でも使われます。",cau:"副作用で空せきが出ることがあります（気になれば相談を）。"},
+{n:"利尿薬",g:"血圧・心臓",what:"余分な塩分・水分を尿として出し、血圧やむくみをやわらげます。",cau:"脱水やミネラルのバランスに注意。だるさが強い時は相談を。"},
+{n:"β遮断薬",g:"血圧・心臓",what:"心拍や血圧をおさえます。狭心症・不整脈・心不全にも使われます。",cau:"🛑 自己判断で急にやめると危険。必ず指示どおりに。"},
+{n:"スタチン",g:"コレステロール",what:"肝臓でのコレステロール合成をおさえ、LDL（悪玉）を下げます。",cau:"⚠️ 筋肉痛・力が入らない・褐色の尿が続く時は受診を。"},
+{n:"抗血小板薬",g:"血液・血栓",what:"血液を固まりにくくして、脳梗塞・心筋梗塞を防ぎます。",cau:"⚠️ 出血しやすくなります。手術・抜歯の前は申告を。"},
+{n:"抗凝固薬（ワルファリン／DOAC）",g:"血液・血栓",what:"血のかたまり（血栓）ができるのを防ぎます。",cau:"🛑 ワルファリンは納豆・青汁・クロレラを避ける。出血に注意し自己判断で中止しない。"},
+{n:"硝酸薬",g:"血圧・心臓",what:"血管を広げ、狭心症の胸の痛みをやわらげます。",cau:"立ちくらみに注意。ED治療薬との併用は禁忌。"},
+{n:"PPI（プロトンポンプ阻害薬）",g:"胃腸",what:"胃酸を強くおさえ、逆流性食道炎・胃十二指腸潰瘍などに使われます。",cau:""},
+{n:"H2ブロッカー",g:"胃腸",what:"胃酸の分泌をおさえ、胃炎・胸やけなどに使われます。",cau:""},
+{n:"消化管運動改善薬",g:"胃腸",what:"胃腸の動きを整え、もたれ・吐き気・張りをやわらげます。",cau:""},
+{n:"ビグアナイド（メトホルミン）",g:"糖尿病",what:"肝臓からの糖の放出をおさえ、血糖を下げます。糖尿病の基本薬の一つ。",cau:"造影剤を使う検査の前後は休薬することがあります。事前に申告を。"},
+{n:"DPP-4阻害薬",g:"糖尿病",what:"食後に血糖を下げるホルモンの働きを助けます。",cau:"単独では低血糖が比較的少ないとされます。"},
+{n:"SGLT2阻害薬",g:"糖尿病",what:"余分な糖を尿から出して血糖を下げます。",cau:"⚠️ 脱水・尿路や陰部の感染に注意。水分補給を。"},
+{n:"SU薬（スルホニル尿素薬）",g:"糖尿病",what:"インスリンの分泌をうながして血糖を下げます。",cau:"⚠️ 低血糖に注意。空腹・運動時のふるえ・冷汗に備えを。"},
+{n:"SSRI",g:"こころ・神経",what:"気分の落ち込みや不安に使われる抗うつ薬の一つ。",cau:"🛑 効果が出るまで数週間。自己判断で急にやめず、減量は医師と相談。"},
+{n:"SNRI",g:"こころ・神経",what:"うつ・不安のほか、一部の慢性の痛みにも使われます。",cau:"自己判断で急にやめない。"},
+{n:"ベンゾジアゼピン系（抗不安・睡眠薬）",g:"こころ・神経",what:"不安や不眠をやわらげます。",cau:"🛑 眠気・ふらつき・依存に注意。急な中止は避け、運転・飲酒に注意。"},
+{n:"抗てんかん薬",g:"こころ・神経",what:"てんかんの発作をおさえます。神経の痛みなどに使われることも。",cau:"🛑 自己判断でやめない。"},
+{n:"NSAIDs（消炎鎮痛薬）",g:"痛み・炎症",what:"痛み・炎症・熱をおさえます。",cau:"⚠️ 胃腸・腎臓に負担。空腹時を避け、ぜんそくのある人は要注意。"},
+{n:"アセトアミノフェン",g:"痛み・炎症",what:"痛みと熱をやわらげます。比較的胃にやさしいとされます。",cau:"⚠️ 飲みすぎ・飲酒で肝臓に負担。市販かぜ薬との重複に注意。"},
+{n:"ステロイド（内服）",g:"炎症・免疫",what:"強い炎症や免疫の過剰をおさえます。",cau:"🛑 自己判断で急にやめると危険。指示どおり少しずつ減らします。"},
+{n:"抗ヒスタミン薬",g:"アレルギー",what:"鼻炎・じんましんなどアレルギー症状をおさえます。",cau:"第1世代は眠気・口の渇きが出やすい。運転前は注意。"},
+{n:"吸入ステロイド／気管支拡張薬",g:"呼吸器",what:"ぜんそく・COPDで、発作の予防や呼吸を楽にします。",cau:"吸入後はうがいを。発作時と予防用の使い分けを確認。"},
+{n:"抗菌薬（抗生物質）",g:"感染症",what:"細菌による感染症に使われます。",cau:"⚠️ 指示された分は飲みきる。かぜ（ウイルス）には効きません。"},
+{n:"ビスホスホネート（骨粗しょう症）",g:"骨・ホルモン",what:"骨をこわす働きをおさえ、骨を強く保ちます。",cau:"⚠️ 起床時に多めの水で飲み、服用後30分は横にならない等、飲み方に決まりがあります。"},
+{n:"甲状腺ホルモン薬（レボチロキシン）",g:"骨・ホルモン",what:"不足した甲状腺ホルモンを補います。",cau:"毎日決まった時間に。自己判断で量を変えない。"},
+{n:"尿酸を下げる薬（高尿酸血症・痛風）",g:"代謝",what:"尿酸値を下げ、痛風発作を予防します。",cau:"飲み始めに一時的に発作が出ることがあります。続けることが大切。"},
+{n:"漢方薬（医療用）",g:"その他",what:"体質や証に合わせて処方されます。市販の漢方と重なることがあります。",cau:"⚠️ 甘草・麻黄などの重複に注意。他の漢方・かぜ薬と併用時は薬剤師へ。"}
+];
+var RX_HANDBOOK=[
+["1冊にまとめる","複数の病院・薬局に通っても、お薬手帳は1冊に集約を。飲み合わせや重複を防げます。"],
+["市販薬・サプリ・漢方も記録","処方薬以外に使っているものも書いておくと、相互作用の確認に役立ちます。"],
+["ジェネリック（後発品）と先発品","「一般名（成分名）」が同じなら中身は同等とされます。商品名（例：〜錠）が違っても、成分名で確認できます。迷ったら薬剤師へ。"],
+["薬剤師への聞き方のコツ","①何のための薬？ ②飲み忘れたら？ ③一緒に飲めない食べ物・薬は？ ④いつまで続ける？ ⑤どんな副作用のサインに注意？ ——この5つが便利です。"],
+["アレルギー・副作用歴を残す","過去に合わなかった薬・出た症状をメモしておくと、次の受診で安全に役立ちます。"]
+];
+function renderRx(){
+  var v=document.getElementById("otcBody");
+  v.innerHTML='<div class="emergency" style="background:linear-gradient(135deg,#b45309,#92400e);box-shadow:0 3px 12px rgba(180,83,9,.3)">'
+   +'<h2>📋 処方薬は医師の指示どおりに</h2>'
+   +'<div class="desc">医師から処方された薬は、<b>自己判断で中止・変更・量の増減をしないでください</b>。気になることは必ず医師・薬剤師に相談を。ここは薬を調べるための<b>入口</b>で、診断や効能の断定はしません。</div></div>'
+   +'<div class="card"><h2>🔎 公式データベースで薬を調べる</h2>'
+   +'<p class="lead">薬名を入れて、公式サイトの検索結果を新しいタブで開きます（このアプリは薬のデータを持たず、公的な情報源へご案内します）。</p>'
+   +'<input class="search" id="rxDbQ" placeholder="薬名を入力（例: カロナール／アムロジピン）" onkeydown="if(event.key===\'Enter\')openSiori()">'
+   +'<button class="btn" style="margin-top:10px" onclick="openSiori()">「くすりのしおり」で検索して開く</button>'
+   +'<p class="lead" style="margin:8px 0 4px">🏛 PMDA（医薬品医療機器総合機構）の公式添付文書も参照できます。ページ内の検索窓に薬名を入力してください。</p>'
+   +'<div class="grid2">'
+   +'<a class="btn ghost sm" style="width:auto" href="https://www.pmda.go.jp/PmdaSearch/iyakuSearch/" target="_blank" rel="noopener">PMDA 医療用医薬品</a>'
+   +'<a class="btn ghost sm" style="width:auto" href="https://www.pmda.go.jp/PmdaSearch/otcSearch/" target="_blank" rel="noopener">PMDA 一般用・要指導</a>'
+   +'</div>'
+   +'<div class="caution" style="margin-top:10px">🔗 リンク先は外部の公式サイトです。当アプリはその内容について責任を負いません。表示された情報も、必ず主治医・薬剤師の説明とあわせてご確認ください。</div>'
+   +'</div>'
+   +'<div class="card"><h2>📖 薬の分類ミニ辞典</h2>'
+   +'<p class="lead">よく処方される薬の「グループ（分類）」ごとに、<b>何のための薬か</b>をやさしく整理しています。個別の製品名・用量は書きません。名前・目的で検索できます。</p>'
+   +'<input class="search" id="rxQ" placeholder="分類・目的で検索（例: けつあつ / いぶくすり / とうにょうびょう）" oninput="renderRxList()">'
+   +'</div><div id="rxList"></div>'
+   +'<div class="card"><h2>📔 お薬手帳の使い方ガイド</h2>'
+   +RX_HANDBOOK.map(function(h){return '<div class="kv"><b>▸ '+esc(h[0])+'</b><br><span style="color:var(--text)">'+esc(h[1])+'</span></div>';}).join("")
+   +'<div class="fixnote" style="margin-top:8px">🩺 お薬手帳は「飲んでいるものをすべて共有する」ための大切な道具です。受診・来局のたびに見せましょう。</div>'
+   +'</div>';
+  renderRxList();
+}
+function openSiori(){
+  var n=((document.getElementById("rxDbQ")||{}).value||"").trim();
+  if(!n){alert("薬名を入力してください。");return;}
+  var url="https://www.rad-ar.or.jp/siori/search?"+btoa("w="+encodeURIComponent(n));
+  window.open(url,"_blank","noopener");
+}
+function renderRxList(){
+  var q=(document.getElementById("rxQ")||{}).value||"";
+  var list=RX_CLASS.filter(function(x){return match(x.n,q)||match(x.what,q)||match(x.g,q);});
+  var box=document.getElementById("rxList");
+  if(!list.length){box.innerHTML='<div class="empty">該当する分類が見つかりませんでした。</div>';return;}
+  box.innerHTML=list.map(function(x){
+    return '<div class="item open"><div class="h"><div><span class="nm">'+esc(x.n)+'</span> '
+     +'<span class="minitag" style="background:var(--blue-light);color:var(--blue)">'+esc(x.g)+'</span></div></div>'
+     +'<div class="body" style="display:block"><div class="kv">'+esc(x.what)+'</div>'
+     +(x.cau?'<div class="caution">'+esc(x.cau)+'</div>':'')+'</div></div>';
   }).join("");
 }
 /* ===== タブ3: 漢方辞典 =====
@@ -967,7 +1066,7 @@ var SEKKI=[
 {n:"大寒",y:"だいかん",per:"1/20頃〜",m:1,d:20,care:"一年で最も寒い頃。無理せず温存を。首元を温め、体を冷やさない工夫を。",food:"かぶ・ねぎ・味噌の温かい汁物",sign:"冷え・かぜ・肩こり"}
 ];
 /* ===== タブ4: 養生ハブ（漢方/生薬/薬膳/お香/アロマ/節気暦） ===== */
-var TOUYOU_SUBS=[["kampo","🌱 漢方"],["shoyaku","🌿 生薬"],["shokuyo","🍲 薬膳"],["kou","🕯 お香"],["aroma","🌸 アロマ"],["sekki","🗓 節気暦"]];
+var TOUYOU_SUBS=[["kampo","🌱 漢方"],["shoyaku","🌿 生薬"],["shokuyo","🍲 薬膳"],["kou","🕯 お香"],["aroma","🌸 アロマ"],["tsubo","🩹 ツボ"],["recipe","🍵 レシピ"],["sekki","🗓 節気暦"]];
 var touyouSub="kampo";
 function renderTouyou(){
   var v=document.getElementById("view-touyou");
@@ -984,6 +1083,8 @@ function renderTouyouBody(){
   else if(touyouSub==="shokuyo")renderShokuyo();
   else if(touyouSub==="kou")renderKou();
   else if(touyouSub==="aroma")renderAroma();
+  else if(touyouSub==="tsubo")renderTsubo();
+  else if(touyouSub==="recipe")renderRecipe();
   else if(touyouSub==="sekki")renderSekki();
 }
 function openKampoFor(n){touyouSub="kampo";renderTouyouBody();var el=document.getElementById("kampoQ");if(el){el.value=n;renderKampoBody();}window.scrollTo(0,0);}
@@ -1115,6 +1216,143 @@ function renderSekki(){
    +SEKKI.map(function(s,i){return sekkiCard(s,i===cur);}).join("");
   v.innerHTML=html;
 }
+/* ===== 養生：ツボ（経穴）／薬膳レシピ／かんたん養生法（index・yojo共通データ） ===== */
+var TSUBO_TAGS=["肩こり","首こり","頭痛","眼精疲労","不眠","ストレス","動悸・不安","胃もたれ","便秘","冷え","むくみ","生理トラブル","鼻づまり","疲れ","腰痛","足の疲れ"];
+var TSUBO=[
+{n:"合谷",y:"ごうこく",loc:"手の甲、親指と人差し指の骨が合わさる手前のくぼみ（人差し指寄り）。",press:"反対の親指で3〜5秒ずつ、少し痛気持ちよい強さで5回ほど。",tags:["頭痛","肩こり","首こり","鼻づまり","ストレス"],cau:"妊娠中は刺激を避けるとされる代表的なツボ。強く押さない。"},
+{n:"足三里",y:"あしさんり",loc:"ひざのお皿の外側の下のくぼみから、指4本分下がったすねの骨の外側。",press:"親指でゆっくり3〜5秒、5回ほど。",tags:["胃もたれ","疲れ","足の疲れ","便秘"],cau:""},
+{n:"百会",y:"ひゃくえ",loc:"頭のてっぺん、左右の耳の先を結んだ線と顔の中心線が交わるところ。",press:"両手の中指で真下へ軽く3〜5秒、5回。",tags:["頭痛","不眠","ストレス"],cau:""},
+{n:"風池",y:"ふうち",loc:"後頭部、髪の生え際で首の太い筋肉の両外側のくぼみ。",press:"両親指で頭の中心へ押し上げるように3〜5秒、5回。",tags:["頭痛","首こり","肩こり","眼精疲労","鼻づまり"],cau:""},
+{n:"肩井",y:"けんせい",loc:"首の付け根と肩先のちょうど中間、肩の一番高いあたり。",press:"反対の手の中指で真下に3〜5秒、5回。",tags:["肩こり","首こり","頭痛"],cau:"妊娠中は強い刺激を避けるとされる。"},
+{n:"内関",y:"ないかん",loc:"手首の内側のしわの中央から指3本分ひじ寄り、2本のすじの間。",press:"反対の親指で3〜5秒、5回。",tags:["動悸・不安","胃もたれ","ストレス"],cau:""},
+{n:"三陰交",y:"さんいんこう",loc:"内くるぶしの一番高いところから指4本分上、すねの骨のすぐ後ろ。",press:"親指で3〜5秒、5回。",tags:["冷え","むくみ","生理トラブル","不眠"],cau:"妊娠中は刺激を避けるとされる代表的なツボ。"},
+{n:"湧泉",y:"ゆうせん",loc:"足の裏、土踏まずのやや上。足の指を曲げるとへこむところ。",press:"両手の親指で3〜5秒、5回。",tags:["冷え","疲れ","不眠"],cau:""},
+{n:"太衝",y:"たいしょう",loc:"足の甲、親指と人差し指の骨の間を足首へたどり指が止まるくぼみ。",press:"親指で3〜5秒、5回。",tags:["ストレス","頭痛","眼精疲労","生理トラブル"],cau:""},
+{n:"曲池",y:"きょくち",loc:"ひじを曲げてできる横じわの、外側の端。",press:"反対の親指で3〜5秒、5回。",tags:["肩こり","便秘","首こり"],cau:""},
+{n:"手三里",y:"てさんり",loc:"曲池（ひじじわ外端）から手首側へ指3本分。",press:"親指で3〜5秒、5回。",tags:["肩こり","首こり","疲れ"],cau:""},
+{n:"天柱",y:"てんちゅう",loc:"後ろ髪の生え際、首の太い筋肉の外側（風池のやや下・内側）の左右。",press:"両親指で押し上げるように3〜5秒、5回。",tags:["首こり","頭痛","眼精疲労","肩こり"],cau:""},
+{n:"攅竹",y:"さんちく",loc:"眉頭の内側の端、少しくぼんだところ。",press:"両親指で軽く3秒、5回。目に近いので爪を立てない。",tags:["眼精疲労","頭痛"],cau:""},
+{n:"太陽",y:"たいよう",loc:"こめかみ、眉尻と目尻の中間から少し後ろのくぼみ。",press:"指の腹で円を描くように軽く。",tags:["眼精疲労","頭痛"],cau:""},
+{n:"睛明",y:"せいめい",loc:"目頭と鼻の付け根の間の、少しくぼんだところ。",press:"親指と人差し指で軽くつまむように3秒、5回。",tags:["眼精疲労","鼻づまり"],cau:"目のすぐそばなので、ごく軽く。"},
+{n:"迎香",y:"げいこう",loc:"小鼻のすぐ外側のくぼみ。",press:"両手の人差し指で小鼻へ向けて軽く3〜5秒、5回。",tags:["鼻づまり"],cau:""},
+{n:"印堂",y:"いんどう",loc:"左右の眉の間、眉間の中央。",press:"人差し指または中指で軽く3〜5秒、5回。",tags:["不眠","ストレス","頭痛","鼻づまり"],cau:""},
+{n:"中脘",y:"ちゅうかん",loc:"みぞおちとおへその、ちょうど真ん中あたり。",press:"指の腹で息を吐きながらゆっくり3〜5秒、5回。",tags:["胃もたれ","疲れ"],cau:"食後すぐは避ける。"},
+{n:"天枢",y:"てんすう",loc:"おへその左右、それぞれ指3本分外側。",press:"両手の指の腹で軽く3〜5秒、5回。",tags:["便秘","胃もたれ"],cau:"妊娠中は強く押さない。"},
+{n:"気海",y:"きかい",loc:"おへそから指2本分下。",press:"手のひらや指の腹で温めるようにやさしく。",tags:["冷え","疲れ"],cau:"妊娠中は強い刺激を避ける。"},
+{n:"関元",y:"かんげん",loc:"おへそから指4本分下。",press:"手のひらで温めるようにやさしく。",tags:["冷え","疲れ","生理トラブル"],cau:"妊娠中は避けるとされる。"},
+{n:"労宮",y:"ろうきゅう",loc:"手のひらの中央、軽く握ると中指の先が当たるところ。",press:"反対の親指で3〜5秒、5回。",tags:["ストレス","動悸・不安","疲れ"],cau:""},
+{n:"神門",y:"しんもん",loc:"手首の内側のしわの上、小指側のすじの内側のくぼみ。",press:"反対の親指で3〜5秒、5回。",tags:["不眠","ストレス","動悸・不安"],cau:""},
+{n:"太渓",y:"たいけい",loc:"内くるぶしとアキレス腱の間のくぼみ。",press:"親指で3〜5秒、5回。",tags:["冷え","むくみ","疲れ"],cau:""},
+{n:"委中",y:"いちゅう",loc:"ひざの裏側の中央、曲げるとできる横じわの真ん中。",press:"指の腹で軽く3〜5秒、5回。",tags:["腰痛","足の疲れ"],cau:""},
+{n:"承山",y:"しょうざん",loc:"ふくらはぎの後ろ中央、アキレス腱を上へたどり筋肉が谷になるところ。",press:"親指で3〜5秒、5回。",tags:["腰痛","足の疲れ"],cau:"こむら返りの際にも親しまれてきた。"},
+{n:"陽陵泉",y:"ようりょうせん",loc:"ひざの外側の少し下、出っぱった骨の前下のくぼみ。",press:"親指で3〜5秒、5回。",tags:["肩こり","足の疲れ","ストレス"],cau:""},
+{n:"血海",y:"けっかい",loc:"ひざのお皿の内側の上角から、指3本分上。",press:"親指で3〜5秒、5回。",tags:["生理トラブル","冷え"],cau:""},
+{n:"大椎",y:"だいつい",loc:"首を前に倒すと後ろに一番出っぱる骨の、すぐ下のくぼみ。",press:"中指で3〜5秒、5回。温めるのもよい。",tags:["首こり","肩こり","鼻づまり"],cau:"かぜのひきはじめに温める養生でも親しまれてきた。"},
+{n:"命門",y:"めいもん",loc:"腰の背骨の上、おへその真裏あたり。",press:"手のひらでさするように温める。",tags:["腰痛","冷え","疲れ"],cau:""}
+];
+var RECIPE=[
+{n:"生姜なつめ黒糖茶",ing:"薄切り生姜3枚・なつめ2個・黒糖小さじ1・湯200ml",make:"カップに材料を入れ熱湯を注ぎ、ふたをして5分蒸らす。",when:"冷えが気になる朝や夜の温活に親しまれてきた組み合わせ。",cau:"妊娠中・持病のある人は生姜のとりすぎに注意。"},
+{n:"シナモン紅茶",ing:"紅茶1杯・シナモン（桂皮）ひとふり・好みで黒糖少々",make:"いれた紅茶にシナモンをふる。",when:"手足の冷えが気になる時に親しまれてきた一杯。",cau:"シナモンは少量に。妊娠中は多用を避ける。"},
+{n:"陳皮しょうが茶",ing:"陳皮ひとつまみ・薄切り生姜2枚・湯200ml",make:"湯を注いで5分蒸らす。",when:"食後の胃もたれ・お腹の張りが気になる時に。",cau:""},
+{n:"クコとなつめの巡り茶",ing:"クコの実10粒・なつめ2個・湯200ml",make:"湯を注いで5分。ふやけた実も食べられる。",when:"目の疲れ・血を補いたい時に親しまれてきた。",cau:""},
+{n:"梨とはちみつの潤い蒸し",ing:"梨1/2個・はちみつ小さじ1",make:"芯をくり抜いた梨にはちみつを入れ、器ごと10〜15分蒸す（レンジ可）。",when:"のどの乾燥・乾いた咳が気になる時に。",cau:"1歳未満の乳児にはちみつは与えない。"},
+{n:"れんこん湯",ing:"れんこんのすりおろし大さじ2・湯150ml・塩少々",make:"すりおろしに熱湯を注ぎ、塩をひとつまみ。",when:"のどのイガイガ・乾燥が気になる時に。",cau:""},
+{n:"大根はちみつ",ing:"角切り大根・かぶるくらいのはちみつ",make:"大根をはちみつに数時間漬け、出た汁を湯で割って飲む。",when:"のどの不快感が気になる時に親しまれてきた。",cau:"1歳未満の乳児は不可。"},
+{n:"小豆かぼちゃのいとこ煮",ing:"ゆで小豆・かぼちゃ",make:"かぼちゃを煮て、ゆで小豆と合わせ甘さ控えめに煮る。",when:"むくみ・疲れが気になる時に。",cau:""},
+{n:"はとむぎ茶",ing:"いりはとむぎ大さじ1・水400ml",make:"水から入れて弱火で5分ほど煮出す。",when:"むくみ・肌のごわつきが気になる時に。",cau:"妊娠中は多用を避けるとされる。"},
+{n:"黒豆茶",ing:"いり黒豆大さじ1・湯200ml",make:"黒豆に熱湯を注いで5分。豆も食べられる。",when:"疲れ・冷え・女性の養生に親しまれてきた。",cau:""},
+{n:"黒ごまくるみペースト",ing:"すり黒ごま大さじ1・刻みくるみ少々・はちみつ少々",make:"混ぜてパンやおかゆに添える。",when:"乾燥・便通・髪の養生に。",cau:"1歳未満はちみつ不可。ナッツのアレルギーに注意。"},
+{n:"山芋のとろろ汁",ing:"すりおろし山芋・だし・しょうゆ少々",make:"山芋をだしでのばし、温かいごはんや汁物に。",when:"胃腸が疲れた時・食欲がない時に。",cau:"生の山芋で口がかゆくなる人は加熱を。"},
+{n:"百合根と卵のスープ",ing:"百合根・溶き卵・だし",make:"百合根をだしで柔らかく煮て、溶き卵を流す。",when:"落ち着かない気分・のどの乾燥が気になる夜に。",cau:""},
+{n:"ねぎ味噌湯",ing:"刻んだ白ねぎ・味噌小さじ1・湯150ml・好みで生姜",make:"味噌をとき、ねぎを入れて熱湯を注ぐ。",when:"寒け・冷えが気になるひきはじめに親しまれてきた。",cau:""},
+{n:"しょうが白湯",ing:"薄切り生姜1〜2枚・白湯200ml",make:"沸かした白湯に生姜を入れ数分おく。",when:"朝の温活・胃を温めたい時に。",cau:""},
+{n:"なつめと山芋の養生スープ",ing:"なつめ2個・山芋・だし",make:"山芋となつめをだしで柔らかく煮る。",when:"胃腸をいたわり気力を補いたい時に。",cau:""},
+{n:"クコ緑茶",ing:"緑茶1杯・クコの実5粒",make:"いれた緑茶にクコを浮かべる。",when:"目の疲れ・気分の切り替えに。",cau:"就寝前はカフェインに注意。"},
+{n:"シナモンはちみつ湯",ing:"シナモンひとふり・はちみつ小さじ1・白湯200ml",make:"白湯にはちみつを溶かしシナモンを少々。",when:"体を温めたい時・のどをいたわりたい時に。",cau:"1歳未満はちみつ不可。"},
+{n:"陳皮なつめの気めぐり茶",ing:"陳皮ひとつまみ・なつめ1〜2個・湯200ml",make:"湯を注いで5分蒸らす。",when:"気分がふさぎ、お腹が張る時に親しまれてきた。",cau:""},
+{n:"黒豆くるみの温め煎じ",ing:"いり黒豆大さじ1・刻みくるみ少々・水300ml",make:"水から弱火で5分ほど煮出す。",when:"冷え・疲れが気になる時に。",cau:"ナッツのアレルギーに注意。"}
+];
+var YOJOHO=[
+{n:"腹式呼吸",how:"①楽な姿勢でおへその下に手を当てる。②鼻から4秒吸ってお腹をふくらませる。③口から6〜8秒かけてゆっくり吐く。5回ほど。",cau:"めまいがしたら中止。無理に長く息を止めない。"},
+{n:"4-7-8呼吸",how:"①口から息を吐ききる。②鼻から4秒吸う。③7秒止める。④口から8秒かけて吐く。3〜4回。",cau:"息苦しさを感じたら通常の呼吸へ。持病のある人は無理をしない。"},
+{n:"首・肩のかんたんストレッチ",how:"①ゆっくり首を前後・左右に倒す。②肩を大きく前後に5回ずつ回す。③深呼吸しながら力を抜く。",cau:"痛み・しびれがある時は無理をしない。"},
+{n:"足湯",how:"①洗面器に40℃前後のお湯を張る。②くるぶしの上まで10〜15分つける。③冷めたら差し湯を。",cau:"のぼせ・持病のある人は短めに。感覚が鈍い人はやけどに注意。"},
+{n:"白湯（さゆ）習慣",how:"①水を沸かし、飲める温度（50℃前後）まで冷ます。②朝や食間にゆっくり一杯。",cau:"熱すぎに注意。飲みすぎない。"},
+{n:"手足のグーパー運動",how:"①手と足の指をグー・パーと10回ずつ開閉。②ふくらはぎも軽くさすって温める。",cau:"痛みがあれば中止。"},
+{n:"目の温めケア",how:"①タオルを軽く絞ってレンジで温める（熱すぎ注意）。②目を閉じてまぶたに数分のせる。",cau:"熱すぎるタオルは使わない。目に異常がある時は行わない。"},
+{n:"肩甲骨ほぐし（背伸び）",how:"①両手を組んで頭上へ伸ばし5秒。②ひじを曲げ肩甲骨を寄せて5秒。③ゆっくり戻す。数回。",cau:"痛みが出る手前で止める。"},
+{n:"ふくらはぎマッサージ",how:"①足首から膝へ手のひらで下から上へさする。②ふくらはぎを軽くもむ。就寝前に。",cau:"強くもみすぎない。片脚だけの強い腫れ・痛みがある時は受診を。"},
+{n:"就寝前の整え方",how:"①寝る1時間前はスマホ・強い光を控える。②ぬるめ（38〜40℃）の入浴で体を温める。③起きる時刻を一定に。",cau:"眠れない状態が続く時は無理せず専門家へ相談を。"}
+];
+var tsuboTag="";
+function toggleTsuboTag(t){tsuboTag=(tsuboTag===t)?"":t;renderTsuboBody();}
+function renderTsubo(){
+  var v=document.getElementById("touyouBody");
+  v.innerHTML='<div class="card"><h2>🩹 ツボ（経穴）とかんたん養生法</h2>'
+   +'<p class="lead">伝統的に親しまれてきたツボと、道具のいらない養生法をまとめました。医療的な治療ではなく、日々のセルフケアの目安です。</p>'
+   +'<div class="caution">⚠️ <b>妊娠中の方へ</b>：<b>三陰交・合谷・肩井</b>など（🤰マーク）は刺激を避けるとよいとされます。妊娠中・持病のある方・体調が悪い時は強い刺激を避け、心配な時は専門家にご相談を。強い痛み・しびれ・炎症がある部位は押さないでください。</div>'
+   +'<input class="search" id="tsuboQ" placeholder="ツボ名・悩みで検索（例: ごうこく / かたこり / ふみん）" oninput="renderTsuboBody()">'
+   +'</div>'
+   +'<div class="sectlabel">悩みから逆引き（タップで絞り込み）</div>'
+   +'<div class="tagrow" id="tsuboTags"></div>'
+   +'<div id="tsuboList"></div>'
+   +'<div class="sectlabel">🧘 かんたん養生法（道具いらず）</div>'
+   +'<div id="yojohoList"></div>';
+  document.getElementById("tsuboTags").innerHTML=TSUBO_TAGS.map(function(t){
+    return '<button class="tag" onclick="toggleTsuboTag(\''+t+'\')">'+t+'</button>';}).join("");
+  document.getElementById("yojohoList").innerHTML=YOJOHO.map(function(y){
+    return '<div class="item open"><div class="h"><div><span class="nm">'+esc(y.n)+'</span></div></div>'
+     +'<div class="body" style="display:block"><div class="kv">'+esc(y.how)+'</div>'
+     +(y.cau?'<div class="caution">🔸 '+esc(y.cau)+'</div>':'')+'</div></div>';
+  }).join("");
+  renderTsuboBody();
+}
+function renderTsuboBody(){
+  document.querySelectorAll("#tsuboTags .tag").forEach(function(b){b.classList.toggle("on",b.textContent===tsuboTag);});
+  var q=(document.getElementById("tsuboQ")||{}).value||"";
+  var list=TSUBO.filter(function(k){
+    if(tsuboTag&&k.tags.indexOf(tsuboTag)<0)return false;
+    if(!q)return true;
+    if(match(k.n,q)||match(k.y,q)||match(k.loc,q))return true;
+    return k.tags.some(function(t){return match(t,q);});
+  });
+  var box=document.getElementById("tsuboList");
+  if(!list.length){box.innerHTML='<div class="empty">該当するツボが見つかりませんでした。</div>';return;}
+  box.innerHTML=list.map(function(k){
+    var tg=k.tags.map(function(t){return '<span class="minitag">'+t+'</span>';}).join("");
+    var preg=(k.cau&&k.cau.indexOf("妊娠")>=0);
+    return '<div class="item open"><div class="h"><div><span class="nm">'+(preg?'🤰 ':'')+esc(k.n)+'</span> <span class="yomi">'+esc(k.y)+'</span></div></div>'
+     +'<div class="body" style="display:block">'
+     +'<div class="kv"><b>場所：</b>'+esc(k.loc)+'</div>'
+     +'<div class="kv"><b>押し方：</b>'+esc(k.press)+'</div>'
+     +'<div class="tags">'+tg+'</div>'
+     +(k.cau?'<div class="caution">⚠️ '+esc(k.cau)+'</div>':'')
+     +'</div></div>';
+  }).join("");
+}
+function renderRecipe(){
+  var v=document.getElementById("touyouBody");
+  v.innerHTML='<div class="card"><h2>🍵 薬膳茶・スープの組み合わせ</h2>'
+   +'<p class="lead">身近な薬膳の食材でつくる、かんたんな組み合わせです。効能を約束するものではなく「〜したい時に親しまれてきた」お茶・スープのメモです。「薬膳」タブの食材とあわせてどうぞ。</p>'
+   +'<input class="search" id="recipeQ" placeholder="材料・気分で検索（例: しょうが / ひえ / のど）" oninput="renderRecipeBody()">'
+   +'</div><div id="recipeList"></div>';
+  renderRecipeBody();
+}
+function renderRecipeBody(){
+  var q=(document.getElementById("recipeQ")||{}).value||"";
+  var list=RECIPE.filter(function(r){return match(r.n,q)||match(r.ing,q)||match(r.when,q);});
+  var box=document.getElementById("recipeList");
+  if(!list.length){box.innerHTML='<div class="empty">該当が見つかりませんでした。</div>';return;}
+  box.innerHTML=list.map(function(r){
+    return '<div class="item open"><div class="h"><div><span class="nm">'+esc(r.n)+'</span></div></div>'
+     +'<div class="body" style="display:block">'
+     +'<div class="kv"><b>材料：</b>'+esc(r.ing)+'</div>'
+     +'<div class="kv"><b>作り方：</b>'+esc(r.make)+'</div>'
+     +'<div class="fixnote">🍵 '+esc(r.when)+'</div>'
+     +(r.cau?'<div class="caution">🔸 '+esc(r.cau)+'</div>':'')
+     +'</div></div>';
+  }).join("");
+}
 /* ===== タブ5: セルフケア記録（手帳） ===== */
 var MOODS=[["😣","つらい"],["😕","いまいち"],["😐","ふつう"],["🙂","よい"],["😄","とても"]];
 var kirokuSub="log";
@@ -1212,7 +1450,7 @@ function startTab(){
     var parts=h.split("/");
     if(parts[0]==="yojo")parts[0]="touyou";
     if(VALID.indexOf(parts[0])>=0){
-      var SUBS=["kampo","shoyaku","shokuyo","kou","aroma","sekki"];
+      var SUBS=["kampo","shoyaku","shokuyo","kou","aroma","tsubo","recipe","sekki"];
       if(parts[0]==="touyou"&&SUBS.indexOf(parts[1])>=0)touyouSub=parts[1];
       go(parts[0]);return;
     }
